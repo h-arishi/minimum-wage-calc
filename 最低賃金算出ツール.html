@@ -409,6 +409,177 @@
             line-height: 1.7;
         }
 
+        /* シミュレーション */
+        .sim-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .sim-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        .sim-toggle label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .sim-fields {
+            display: none;
+            margin-top: 12px;
+            padding: 16px;
+            background: #fef9e7;
+            border: 1px dashed #d97706;
+            border-radius: 8px;
+        }
+
+        .sim-fields.active {
+            display: block;
+        }
+
+        .sim-fields .sim-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: 8px;
+        }
+
+        .sim-fields .sim-hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .sim-fields input {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text);
+            background: var(--card);
+            width: 200px;
+            transition: border-color 0.2s;
+        }
+
+        .sim-fields input:focus {
+            outline: none;
+            border-color: var(--warning);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+        }
+
+        /* シミュレーション結果 */
+        .sim-result-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px dashed var(--warning);
+        }
+
+        .sim-result-section h3 {
+            font-size: 1rem;
+            color: var(--warning);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sim-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-box {
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .comparison-box .comp-title {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .comparison-box .comp-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .comparison-box .comp-detail {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .comparison-box.current {
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        .comparison-box.sim {
+            background: #fef9e7;
+            border: 1px dashed var(--warning);
+        }
+
+        .comp-badge.pass {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .comp-badge.fail {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .sim-action-msg {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .sim-action-msg.needs-raise {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .sim-action-msg.ok {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
         footer {
             text-align: center;
             padding: 20px;
@@ -456,6 +627,21 @@
                     </select>
                     <span class="hint">支払われている賃金の形態を選択してください</span>
                 </div>
+            </div>
+
+            <div class="sim-toggle">
+                <input type="checkbox" id="simEnabled" onchange="toggleSimulation()">
+                <label for="simEnabled">来年度の最低賃金引き上げをシミュレーションする</label>
+            </div>
+
+            <div id="simFields" class="sim-fields">
+                <div class="sim-label">来年度の予想最低賃金（円/時間）</div>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <input type="text" id="simMinWage" class="comma-input" placeholder="例: 1,300" inputmode="numeric">
+                    <span id="simDiffHint" style="font-size: 0.85rem; color: var(--text-light);"></span>
+                </div>
+                <div class="sim-hint">選択中の都道府県の現行最低賃金をベースに、予想額を入力してください。</div>
+                <div class="sim-hint" id="simRaiseGuide" style="margin-top: 4px;"></div>
             </div>
         </div>
 
@@ -638,6 +824,30 @@
                     <tbody id="detailBody"></tbody>
                 </table>
 
+                <!-- シミュレーション結果 -->
+                <div id="simResults" style="display: none;">
+                    <div class="sim-result-section">
+                        <h3><span class="sim-badge">シミュレーション</span> 来年度予想との比較</h3>
+
+                        <div class="comparison-grid" id="comparisonGrid"></div>
+
+                        <div id="simActionMsg"></div>
+
+                        <div id="simDetailSection" style="margin-top: 16px;">
+                            <table class="result-table" id="simDetailTable">
+                                <thead>
+                                    <tr>
+                                        <th>項目</th>
+                                        <th>現行</th>
+                                        <th>来年度予想</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="simDetailBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="no-print" style="display: flex; gap: 8px; margin-top: 16px;">
                     <button class="btn" style="background: #475569; flex: 1;" onclick="exportCSV()">CSV出力</button>
                     <button class="btn" style="background: #475569; flex: 1;" onclick="printResult()">印刷</button>
@@ -696,6 +906,7 @@
     // 計算結果保存
     // ============================================================
     let lastResult = null;
+    let lastSimResult = null;
 
     // ============================================================
     // 初期化
@@ -712,7 +923,20 @@
         }
         updateMinWageHint();
 
-        select.addEventListener('change', updateMinWageHint);
+        select.addEventListener('change', function() {
+            updateMinWageHint();
+            updateSimHints();
+        });
+
+        // シミュレーション入力のカンマ区切り + ヒント更新
+        var simInput = document.getElementById('simMinWage');
+        simInput.addEventListener('input', function() {
+            var raw = this.value.replace(/[^0-9]/g, '');
+            if (raw) {
+                this.value = Number(raw).toLocaleString();
+            }
+            updateSimHints();
+        });
 
         // 賃金形態切り替え
         document.getElementById('wageType').addEventListener('change', switchWageType);
@@ -799,6 +1023,53 @@
             }
         });
         updateExclusionVisibility();
+    }
+
+    function toggleSimulation() {
+        var enabled = document.getElementById('simEnabled').checked;
+        var fields = document.getElementById('simFields');
+        if (enabled) {
+            fields.classList.add('active');
+            // 現行の最低賃金を初期値としてセット（未入力の場合）
+            var simInput = document.getElementById('simMinWage');
+            if (!simInput.value) {
+                var pref = document.getElementById('prefecture').value;
+                var current = MIN_WAGES[pref];
+                // 近年の引き上げ傾向（約50円前後）を加算した参考値をセット
+                var suggested = current + 50;
+                simInput.value = suggested.toLocaleString();
+            }
+            updateSimHints();
+        } else {
+            fields.classList.remove('active');
+        }
+    }
+
+    function updateSimHints() {
+        var pref = document.getElementById('prefecture').value;
+        var current = MIN_WAGES[pref];
+        var simInput = document.getElementById('simMinWage');
+        var raw = simInput.value.replace(/[^0-9]/g, '');
+        var simWage = parseInt(raw, 10) || 0;
+
+        var diffHint = document.getElementById('simDiffHint');
+        var guideHint = document.getElementById('simRaiseGuide');
+
+        if (simWage > 0) {
+            var diff = simWage - current;
+            var pct = ((diff / current) * 100).toFixed(1);
+            if (diff > 0) {
+                diffHint.textContent = '（現行比 +' + diff + '円 / +' + pct + '%）';
+            } else if (diff < 0) {
+                diffHint.textContent = '（現行比 ' + diff + '円 / ' + pct + '%）';
+            } else {
+                diffHint.textContent = '（現行と同額）';
+            }
+        } else {
+            diffHint.textContent = '';
+        }
+
+        guideHint.textContent = '参考: ' + pref + 'の現行最低賃金は ' + current.toLocaleString() + '円です。';
     }
 
     function updateMonthlyAvgHours() {
@@ -1074,6 +1345,27 @@
             components: components
         };
 
+        // シミュレーション結果
+        lastSimResult = null;
+        if (document.getElementById('simEnabled').checked) {
+            var simRaw = document.getElementById('simMinWage').value.replace(/[^0-9]/g, '');
+            var simMinWage = parseInt(simRaw, 10) || 0;
+            if (simMinWage > 0) {
+                var simPass = hourlyEquiv >= simMinWage;
+                var simDiff = hourlyEquiv - simMinWage;
+                lastSimResult = {
+                    simMinWage: simMinWage,
+                    hourlyEquiv: hourlyEquiv,
+                    pass: simPass,
+                    diff: simDiff,
+                    currentMinWage: minWage,
+                    currentPass: pass,
+                    currentDiff: diff,
+                    prefecture: pref
+                };
+            }
+        }
+
         renderResults();
     }
 
@@ -1165,8 +1457,83 @@
 
         table.style.display = '';
 
+        // シミュレーション結果の描画
+        renderSimResults();
+
         // スクロール
         document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderSimResults() {
+        var simEl = document.getElementById('simResults');
+        if (!lastSimResult) {
+            simEl.style.display = 'none';
+            return;
+        }
+        simEl.style.display = '';
+
+        var s = lastSimResult;
+        var r = lastResult;
+
+        // 比較グリッド
+        var grid = document.getElementById('comparisonGrid');
+        grid.innerHTML =
+            '<div class="comparison-box current">' +
+                '<div class="comp-title">現行（' + r.prefecture + ' ' + r.minWage.toLocaleString() + '円）</div>' +
+                '<div class="comp-badge ' + (r.pass ? 'pass' : 'fail') + '">' + (r.pass ? '適合' : '不足') + '</div>' +
+                '<div class="comp-detail">' + (r.pass ? '余裕 +' : '不足 ') + formatYen2(r.diff) + '</div>' +
+            '</div>' +
+            '<div class="comparison-box sim">' +
+                '<div class="comp-title">来年度予想（' + s.simMinWage.toLocaleString() + '円）</div>' +
+                '<div class="comp-badge ' + (s.pass ? 'pass' : 'fail') + '">' + (s.pass ? '適合' : '不足') + '</div>' +
+                '<div class="comp-detail">' + (s.pass ? '余裕 +' : '不足 ') + formatYen2(s.diff) + '</div>' +
+            '</div>';
+
+        // アクションメッセージ
+        var msgEl = document.getElementById('simActionMsg');
+        if (!s.pass) {
+            var shortage = Math.abs(s.diff);
+            var raiseNeeded = s.simMinWage - r.minWage;
+            msgEl.className = 'sim-action-msg needs-raise';
+            msgEl.innerHTML =
+                '来年度の予想最低賃金（' + s.simMinWage.toLocaleString() + '円）では <strong>不足</strong> となります。<br>' +
+                '時間換算額をあと <strong>' + formatYen2(shortage) + '</strong> 引き上げる必要があります。';
+            if (r.wageType === 'monthly' || (r.wageType === 'combination')) {
+                // 月給制の場合、必要な月給引き上げ額の目安を算出
+                var annualDays, hoursPerDay;
+                if (r.wageType === 'monthly') {
+                    annualDays = parseFloat2('annualDays');
+                    hoursPerDay = parseFloat2('monthlyHoursPerDay');
+                } else {
+                    annualDays = parseFloat2('comboAnnualDays');
+                    hoursPerDay = parseFloat2('comboHoursPerDay');
+                }
+                var monthlyHours = annualDays * hoursPerDay / 12;
+                if (monthlyHours > 0) {
+                    var monthlyRaise = Math.ceil(shortage * monthlyHours);
+                    msgEl.innerHTML += '<br>月給換算の目安: 月額 <strong>+' + monthlyRaise.toLocaleString() + '円</strong> 程度の昇給が必要です。';
+                }
+            }
+        } else {
+            msgEl.className = 'sim-action-msg ok';
+            msgEl.innerHTML =
+                '来年度の予想最低賃金（' + s.simMinWage.toLocaleString() + '円）でも <strong>適合</strong> です。' +
+                '余裕額は <strong>' + formatYen2(s.diff) + '</strong> です。';
+        }
+
+        // 比較明細テーブル
+        var simBody = document.getElementById('simDetailBody');
+        simBody.innerHTML = '';
+        addSimRow(simBody, '最低賃金', r.minWage.toLocaleString() + '円', s.simMinWage.toLocaleString() + '円');
+        addSimRow(simBody, '時間換算額', formatYen2(r.hourlyEquiv), formatYen2(s.hourlyEquiv));
+        addSimRow(simBody, '差額', (r.pass ? '+' : '') + formatYen2(r.diff), (s.pass ? '+' : '') + formatYen2(s.diff));
+        addSimRow(simBody, '判定', r.pass ? '適合' : '不足', s.pass ? '適合' : '不足');
+    }
+
+    function addSimRow(tbody, label, currentVal, simVal) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + label + '</td><td>' + currentVal + '</td><td>' + simVal + '</td>';
+        tbody.appendChild(tr);
     }
 
     function addDetailRow(tbody, label, value) {
@@ -1229,6 +1596,16 @@
         rows.push(['最低賃金', r.minWage + '円']);
         rows.push(['判定', r.pass ? '適合' : '不足']);
         rows.push(['差額', (r.pass ? '+' : '') + formatYen2(r.diff)]);
+
+        if (lastSimResult) {
+            var s = lastSimResult;
+            rows.push(['']);
+            rows.push(['--- 来年度シミュレーション ---', '']);
+            rows.push(['来年度予想最低賃金', s.simMinWage + '円']);
+            rows.push(['時間換算額', formatYen2(s.hourlyEquiv)]);
+            rows.push(['判定', s.pass ? '適合' : '不足']);
+            rows.push(['差額', (s.pass ? '+' : '') + formatYen2(s.diff)]);
+        }
 
         var bom = '\uFEFF';
         var csv = bom + rows.map(function(row) { return row.join(','); }).join('\n');
