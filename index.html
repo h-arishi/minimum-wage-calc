@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最低賃金算定ツール</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-light);
+            color: var(--primary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text);
+            background: var(--card);
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group .hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .btn:active {
+            background: #1e40af;
+        }
+
+        /* Wage sections */
+        .wage-section {
+            display: none;
+        }
+
+        .wage-section.active {
+            display: block;
+        }
+
+        .section-desc {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        /* Combination toggles */
+        .combo-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+
+        .combo-toggles label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .combo-toggles input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        .combo-sub {
+            display: none;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .combo-sub.active {
+            display: block;
+        }
+
+        .combo-sub h3 {
+            font-size: 0.95rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        /* Exclusion list */
+        .exclusion-list {
+            list-style: none;
+        }
+
+        .exclusion-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .exclusion-item:last-child {
+            border-bottom: none;
+        }
+
+        .exclusion-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            accent-color: var(--primary);
+        }
+
+        .exclusion-item .excl-label {
+            flex: 1;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .exclusion-item .excl-amount {
+            width: 140px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: right;
+            background: var(--card);
+            transition: border-color 0.2s;
+        }
+
+        .exclusion-item .excl-amount:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .exclusion-item .excl-amount:disabled {
+            background: var(--bg);
+            color: var(--text-light);
+        }
+
+        .exclusion-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            margin-top: 8px;
+            border-top: 2px solid var(--primary-light);
+            font-weight: 600;
+        }
+
+        /* Results */
+        #results {
+            display: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 24px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .badge-pass {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-fail {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .result-summary {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-summary .badge {
+            margin-bottom: 16px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .summary-card {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-card .label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .summary-card .value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .summary-card.pass {
+            background: var(--success-light);
+        }
+
+        .summary-card.pass .value {
+            color: var(--success);
+        }
+
+        .summary-card.fail {
+            background: var(--danger-light);
+        }
+
+        .summary-card.fail .value {
+            color: var(--danger);
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 10px 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-table th {
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            background: var(--bg);
+        }
+
+        .result-table td:first-child {
+            text-align: left;
+        }
+
+        .result-table tr.total {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .result-table tr.total.pass {
+            background: var(--success-light);
+        }
+
+        .result-table tr.total.pass td {
+            border-bottom: 2px solid var(--success);
+        }
+
+        .result-table tr.total.fail {
+            background: var(--danger-light);
+        }
+
+        .result-table tr.total.fail td {
+            border-bottom: 2px solid var(--danger);
+        }
+
+        .result-table tr.section-header td {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--primary-light);
+        }
+
+        .note {
+            background: var(--warning-light);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.8rem;
+            color: var(--warning);
+            margin-top: 16px;
+            line-height: 1.7;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.75rem;
+        }
+
+        @media print {
+            body { background: #fff; font-size: 12pt; }
+            .no-print { display: none !important; }
+            .btn { display: none !important; }
+            .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+            #results { display: block !important; }
+            header { padding: 10px 0; }
+            footer { display: none; }
+            .result-table { font-size: 10pt; }
+            .note { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>最低賃金算定ツール</h1>
+            <p>賃金が地域別最低賃金を満たしているか判定します（令和7年度 2025年10月発効）</p>
+        </header>
+
+        <!-- Card 1: 基本情報 -->
+        <div class="card no-print">
+            <h2>基本情報</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="prefecture">都道府県</label>
+                    <select id="prefecture"></select>
+                    <span class="hint" id="minWageHint"></span>
+                </div>
+                <div class="form-group">
+                    <label for="wageType">賃金形態</label>
+                    <select id="wageType">
+                        <option value="hourly">時間給制</option>
+                        <option value="daily">日給制</option>
+                        <option value="monthly" selected>月給制</option>
+                        <option value="piecerate">出来高払制</option>
+                        <option value="combination">組み合わせ</option>
+                    </select>
+                    <span class="hint">支払われている賃金の形態を選択してください</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: 賃金入力 -->
+        <div class="card no-print" id="wageInputCard">
+            <h2>賃金入力</h2>
+
+            <!-- 時間給制 -->
+            <div id="hourlySection" class="wage-section">
+                <p class="section-desc">時間給 ≧ 最低賃金額 で判定します。</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="hourlyWage">時間給（円）</label>
+                        <input type="text" id="hourlyWage" class="comma-input" placeholder="例: 1,200" inputmode="numeric">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 日給制 -->
+            <div id="dailySection" class="wage-section">
+                <p class="section-desc">日給 ÷ 1日の所定労働時間 ≧ 最低賃金額 で判定します。</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dailyWage">日給（円）</label>
+                        <input type="text" id="dailyWage" class="comma-input" placeholder="例: 8,000" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label for="dailyHours">1日の所定労働時間</label>
+                        <input type="number" id="dailyHours" placeholder="例: 8" step="0.25" value="8" min="1" max="24">
+                        <span class="hint">時間単位（例: 7.5）</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月給制 -->
+            <div id="monthlySection" class="wage-section">
+                <p class="section-desc">（月給 − 除外賃金） ÷ 月平均所定労働時間 ≧ 最低賃金額 で判定します。</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="monthlyWage">月給（円）</label>
+                        <input type="text" id="monthlyWage" class="comma-input" placeholder="例: 220,000" inputmode="numeric">
+                        <span class="hint">諸手当を含む総支給額</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="annualDays">年間所定労働日数（日）</label>
+                        <input type="number" id="annualDays" placeholder="例: 250" value="250" min="1" max="366">
+                    </div>
+                    <div class="form-group">
+                        <label for="monthlyHoursPerDay">1日の所定労働時間</label>
+                        <input type="number" id="monthlyHoursPerDay" placeholder="例: 8" step="0.25" value="8" min="1" max="24">
+                        <span class="hint">月平均所定労働時間 = 年間所定労働日数 × 1日の所定労働時間 ÷ 12</span>
+                    </div>
+                    <div class="form-group">
+                        <label>月平均所定労働時間</label>
+                        <input type="text" id="monthlyAvgHours" readonly style="background: var(--bg); color: var(--text-light);">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 出来高払制 -->
+            <div id="piecerateSection" class="wage-section">
+                <p class="section-desc">賃金計算期間の賃金総額 ÷ 総労働時間 ≧ 最低賃金額 で判定します。</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="piecerateWage">賃金計算期間の賃金総額（円）</label>
+                        <input type="text" id="piecerateWage" class="comma-input" placeholder="例: 180,000" inputmode="numeric">
+                        <span class="hint">出来高払制その他の請負制による賃金の総額</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="piecerateTotalHours">当該期間の総労働時間</label>
+                        <input type="number" id="piecerateTotalHours" placeholder="例: 170" step="0.5" min="0.5">
+                        <span class="hint">時間単位</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 組み合わせ -->
+            <div id="combinationSection" class="wage-section">
+                <p class="section-desc">複数の賃金形態が組み合わさっている場合、各部分の時間換算額の合計 ≧ 最低賃金額 で判定します。</p>
+
+                <div class="form-grid" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="comboAnnualDays">年間所定労働日数（日）</label>
+                        <input type="number" id="comboAnnualDays" placeholder="例: 250" value="250" min="1" max="366">
+                    </div>
+                    <div class="form-group">
+                        <label for="comboHoursPerDay">1日の所定労働時間</label>
+                        <input type="number" id="comboHoursPerDay" placeholder="例: 8" step="0.25" value="8" min="1" max="24">
+                    </div>
+                </div>
+
+                <div class="combo-toggles">
+                    <label><input type="checkbox" id="comboMonthly" checked onchange="toggleComboSub()"> 月給部分</label>
+                    <label><input type="checkbox" id="comboHourly" onchange="toggleComboSub()"> 時間給部分</label>
+                    <label><input type="checkbox" id="comboDaily" onchange="toggleComboSub()"> 日給部分</label>
+                    <label><input type="checkbox" id="comboPiecerate" onchange="toggleComboSub()"> 出来高払部分</label>
+                </div>
+
+                <div id="comboMonthlyFields" class="combo-sub active">
+                    <h3>月給部分</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="comboMonthlyWage">月給部分の金額（円）</label>
+                            <input type="text" id="comboMonthlyWage" class="comma-input" placeholder="例: 180,000" inputmode="numeric">
+                            <span class="hint">除外賃金を差し引く前の金額</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="comboHourlyFields" class="combo-sub">
+                    <h3>時間給部分</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="comboHourlyWage">時間給（円）</label>
+                            <input type="text" id="comboHourlyWage" class="comma-input" placeholder="例: 200" inputmode="numeric">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="comboDailyFields" class="combo-sub">
+                    <h3>日給部分</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="comboDailyWage">日給（円）</label>
+                            <input type="text" id="comboDailyWage" class="comma-input" placeholder="例: 3,000" inputmode="numeric">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="comboPiecerateFields" class="combo-sub">
+                    <h3>出来高払部分</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="comboPiecerateWage">当該期間の出来高払賃金総額（円）</label>
+                            <input type="text" id="comboPiecerateWage" class="comma-input" placeholder="例: 50,000" inputmode="numeric">
+                        </div>
+                        <div class="form-group">
+                            <label for="comboPiecerateTotalHours">当該期間の総労働時間</label>
+                            <input type="number" id="comboPiecerateTotalHours" placeholder="例: 170" step="0.5" min="0.5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: 除外賃金 -->
+        <div class="card no-print" id="exclusionCard" style="display: none;">
+            <h2>除外賃金</h2>
+            <p class="section-desc">最低賃金の計算から除外される賃金にチェックを入れ、金額を入力してください。</p>
+            <ul class="exclusion-list" id="exclusionList"></ul>
+            <div class="exclusion-total">
+                <span>除外賃金合計</span>
+                <span id="exclusionTotal">0円</span>
+            </div>
+        </div>
+
+        <!-- 計算ボタン -->
+        <div class="no-print" style="margin-bottom: 20px;">
+            <button class="btn" onclick="calculate()">判定する</button>
+        </div>
+
+        <!-- Card 4: 判定結果 -->
+        <div id="results">
+            <div class="card">
+                <h2>判定結果</h2>
+
+                <div class="result-summary">
+                    <div id="judgmentBadge"></div>
+                </div>
+
+                <div class="summary-cards" id="summaryCards"></div>
+
+                <table class="result-table" id="detailTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>金額・数値</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailBody"></tbody>
+                </table>
+
+                <div class="no-print" style="display: flex; gap: 8px; margin-top: 16px;">
+                    <button class="btn" style="background: #475569; flex: 1;" onclick="exportCSV()">CSV出力</button>
+                    <button class="btn" style="background: #475569; flex: 1;" onclick="printResult()">印刷</button>
+                </div>
+
+                <div class="note">
+                    <strong>注意事項：</strong><br>
+                    ・本ツールは令和7年度（2025年10月発効）の地域別最低賃金に基づいた判定です。<br>
+                    ・特定（産業別）最低賃金は考慮していません。該当する場合は別途確認が必要です。<br>
+                    ・除外賃金（精皆勤手当、通勤手当、家族手当、時間外・休日・深夜割増賃金、臨時の賃金、賞与等）は最低賃金の計算に含まれません。<br>
+                    ・実際の適用については管轄の労働基準監督署にご確認ください。<br>
+                    ・出典: <a href="https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/minimumichiran/" target="_blank" rel="noopener">厚生労働省 地域別最低賃金の全国一覧</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            最低賃金算定ツール | 令和7年度（2025年10月発効）地域別最低賃金基準
+        </footer>
+    </div>
+
+    <script>
+    // ============================================================
+    // 地域別最低賃金（令和7年度 2025年10月発効）
+    // ============================================================
+    const MIN_WAGES = {
+        '北海道': 1075, '青森県': 1029, '岩手県': 1031, '宮城県': 1038,
+        '秋田県': 1031, '山形県': 1032, '福島県': 1033, '茨城県': 1074,
+        '栃木県': 1068, '群馬県': 1063, '埼玉県': 1141, '千葉県': 1140,
+        '東京都': 1226, '神奈川県': 1225, '新潟県': 1050, '富山県': 1062,
+        '石川県': 1054, '福井県': 1053, '山梨県': 1052, '長野県': 1061,
+        '岐阜県': 1065, '静岡県': 1097, '愛知県': 1140, '三重県': 1087,
+        '滋賀県': 1080, '京都府': 1122, '大阪府': 1177, '兵庫県': 1116,
+        '奈良県': 1051, '和歌山県': 1045, '鳥取県': 1030, '島根県': 1033,
+        '岡山県': 1047, '広島県': 1085, '山口県': 1043, '徳島県': 1046,
+        '香川県': 1036, '愛媛県': 1033, '高知県': 1023, '福岡県': 1057,
+        '佐賀県': 1030, '長崎県': 1031, '熊本県': 1034, '大分県': 1035,
+        '宮崎県': 1023, '鹿児島県': 1026, '沖縄県': 1023
+    };
+
+    // ============================================================
+    // 除外賃金の定義（8種類）
+    // ============================================================
+    const EXCLUSIONS = [
+        { id: 'seikaikin',  name: '精皆勤手当' },
+        { id: 'commute',    name: '通勤手当' },
+        { id: 'family',     name: '家族手当' },
+        { id: 'overtime',   name: '時間外割増賃金' },
+        { id: 'holiday',    name: '休日割増賃金' },
+        { id: 'night',      name: '深夜割増賃金' },
+        { id: 'temporary',  name: '臨時に支払われる賃金' },
+        { id: 'bonus',      name: '賞与等（1ヶ月超の期間ごとに支払われるもの）' }
+    ];
+
+    // ============================================================
+    // 計算結果保存
+    // ============================================================
+    let lastResult = null;
+
+    // ============================================================
+    // 初期化
+    // ============================================================
+    (function init() {
+        // 都道府県セレクト生成
+        const select = document.getElementById('prefecture');
+        for (const name of Object.keys(MIN_WAGES)) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = `${name}（${MIN_WAGES[name].toLocaleString()}円）`;
+            if (name === '東京都') opt.selected = true;
+            select.appendChild(opt);
+        }
+        updateMinWageHint();
+
+        select.addEventListener('change', updateMinWageHint);
+
+        // 賃金形態切り替え
+        document.getElementById('wageType').addEventListener('change', switchWageType);
+
+        // カンマ区切り入力サポート
+        document.querySelectorAll('.comma-input').forEach(function(input) {
+            input.addEventListener('input', function() {
+                const raw = this.value.replace(/[^0-9]/g, '');
+                if (raw) {
+                    this.value = Number(raw).toLocaleString();
+                }
+            });
+        });
+
+        // 月平均所定労働時間の自動計算
+        document.getElementById('annualDays').addEventListener('input', updateMonthlyAvgHours);
+        document.getElementById('monthlyHoursPerDay').addEventListener('input', updateMonthlyAvgHours);
+
+        // 除外賃金リスト生成
+        buildExclusionList();
+
+        // 初期表示
+        switchWageType();
+        updateMonthlyAvgHours();
+    })();
+
+    // ============================================================
+    // UI制御
+    // ============================================================
+    function updateMinWageHint() {
+        const pref = document.getElementById('prefecture').value;
+        const wage = MIN_WAGES[pref];
+        document.getElementById('minWageHint').textContent =
+            `現在の最低賃金: ${wage.toLocaleString()}円/時間`;
+    }
+
+    function switchWageType() {
+        const type = document.getElementById('wageType').value;
+        document.querySelectorAll('.wage-section').forEach(function(el) {
+            el.classList.remove('active');
+        });
+
+        var sectionId = {
+            hourly: 'hourlySection',
+            daily: 'dailySection',
+            monthly: 'monthlySection',
+            piecerate: 'piecerateSection',
+            combination: 'combinationSection'
+        }[type];
+
+        if (sectionId) {
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // 除外賃金カードの表示制御
+        updateExclusionVisibility();
+    }
+
+    function updateExclusionVisibility() {
+        const type = document.getElementById('wageType').value;
+        var show = false;
+        if (type === 'monthly') {
+            show = true;
+        } else if (type === 'combination') {
+            show = document.getElementById('comboMonthly').checked;
+        }
+        document.getElementById('exclusionCard').style.display = show ? '' : 'none';
+    }
+
+    function toggleComboSub() {
+        var combos = [
+            { check: 'comboMonthly', fields: 'comboMonthlyFields' },
+            { check: 'comboHourly', fields: 'comboHourlyFields' },
+            { check: 'comboDaily', fields: 'comboDailyFields' },
+            { check: 'comboPiecerate', fields: 'comboPiecerateFields' }
+        ];
+        combos.forEach(function(c) {
+            var checked = document.getElementById(c.check).checked;
+            var el = document.getElementById(c.fields);
+            if (checked) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+        updateExclusionVisibility();
+    }
+
+    function updateMonthlyAvgHours() {
+        var days = parseFloat(document.getElementById('annualDays').value) || 0;
+        var hours = parseFloat(document.getElementById('monthlyHoursPerDay').value) || 0;
+        var avg = days * hours / 12;
+        document.getElementById('monthlyAvgHours').value =
+            avg > 0 ? avg.toFixed(2) + ' 時間' : '';
+    }
+
+    // ============================================================
+    // 除外賃金リスト構築
+    // ============================================================
+    function buildExclusionList() {
+        var list = document.getElementById('exclusionList');
+        EXCLUSIONS.forEach(function(excl) {
+            var li = document.createElement('li');
+            li.className = 'exclusion-item';
+            li.innerHTML =
+                '<input type="checkbox" id="excl_' + excl.id + '" onchange="toggleExclusion(\'' + excl.id + '\')">' +
+                '<label class="excl-label" for="excl_' + excl.id + '">' + excl.name + '</label>' +
+                '<input type="text" class="excl-amount comma-input" id="exclAmt_' + excl.id + '" placeholder="0" inputmode="numeric" disabled>';
+            list.appendChild(li);
+
+            // カンマ区切り + 合計更新
+            var amtInput = li.querySelector('.excl-amount');
+            amtInput.addEventListener('input', function() {
+                var raw = this.value.replace(/[^0-9]/g, '');
+                if (raw) {
+                    this.value = Number(raw).toLocaleString();
+                }
+                updateExclusionTotal();
+            });
+        });
+    }
+
+    function toggleExclusion(id) {
+        var checked = document.getElementById('excl_' + id).checked;
+        var amtInput = document.getElementById('exclAmt_' + id);
+        amtInput.disabled = !checked;
+        if (!checked) {
+            amtInput.value = '';
+        }
+        updateExclusionTotal();
+    }
+
+    function updateExclusionTotal() {
+        var total = getExclusionTotal();
+        document.getElementById('exclusionTotal').textContent = total.toLocaleString() + '円';
+    }
+
+    function getExclusionTotal() {
+        var total = 0;
+        EXCLUSIONS.forEach(function(excl) {
+            var cb = document.getElementById('excl_' + excl.id);
+            if (cb && cb.checked) {
+                total += parseNum('exclAmt_' + excl.id);
+            }
+        });
+        return total;
+    }
+
+    function getExclusionDetails() {
+        var details = [];
+        EXCLUSIONS.forEach(function(excl) {
+            var cb = document.getElementById('excl_' + excl.id);
+            if (cb && cb.checked) {
+                var amt = parseNum('exclAmt_' + excl.id);
+                if (amt > 0) {
+                    details.push({ name: excl.name, amount: amt });
+                }
+            }
+        });
+        return details;
+    }
+
+    // ============================================================
+    // 数値パース
+    // ============================================================
+    function parseNum(id) {
+        var el = document.getElementById(id);
+        if (!el) return 0;
+        var raw = el.value.replace(/[^0-9]/g, '');
+        return parseInt(raw, 10) || 0;
+    }
+
+    function parseFloat2(id) {
+        var el = document.getElementById(id);
+        if (!el) return 0;
+        return parseFloat(el.value) || 0;
+    }
+
+    // ============================================================
+    // 計算関数
+    // ============================================================
+    function calcHourly(hourlyWage) {
+        return hourlyWage;
+    }
+
+    function calcDaily(dailyWage, hoursPerDay) {
+        if (hoursPerDay <= 0) return 0;
+        return dailyWage / hoursPerDay;
+    }
+
+    function calcMonthly(monthlyWage, exclusionTotal, annualDays, hoursPerDay) {
+        var monthlyHours = annualDays * hoursPerDay / 12;
+        if (monthlyHours <= 0) return 0;
+        return (monthlyWage - exclusionTotal) / monthlyHours;
+    }
+
+    function calcPiecerate(totalWage, totalHours) {
+        if (totalHours <= 0) return 0;
+        return totalWage / totalHours;
+    }
+
+    // ============================================================
+    // メイン判定
+    // ============================================================
+    function calculate() {
+        var pref = document.getElementById('prefecture').value;
+        var minWage = MIN_WAGES[pref];
+        var type = document.getElementById('wageType').value;
+        var hourlyEquiv = 0;
+        var details = [];
+        var components = [];
+
+        if (type === 'hourly') {
+            var wage = parseNum('hourlyWage');
+            if (!wage) { alert('時間給を入力してください。'); return; }
+            hourlyEquiv = calcHourly(wage);
+            details.push({ label: '時間給', value: formatYen(wage) });
+
+        } else if (type === 'daily') {
+            var wage = parseNum('dailyWage');
+            var hours = parseFloat2('dailyHours');
+            if (!wage) { alert('日給を入力してください。'); return; }
+            if (hours <= 0) { alert('1日の所定労働時間を入力してください。'); return; }
+            hourlyEquiv = calcDaily(wage, hours);
+            details.push({ label: '日給', value: formatYen(wage) });
+            details.push({ label: '1日の所定労働時間', value: hours + ' 時間' });
+            details.push({ label: '計算式', value: formatYen(wage) + ' ÷ ' + hours + '時間' });
+
+        } else if (type === 'monthly') {
+            var wage = parseNum('monthlyWage');
+            var days = parseFloat2('annualDays');
+            var hours = parseFloat2('monthlyHoursPerDay');
+            if (!wage) { alert('月給を入力してください。'); return; }
+            if (days <= 0) { alert('年間所定労働日数を入力してください。'); return; }
+            if (hours <= 0) { alert('1日の所定労働時間を入力してください。'); return; }
+            var exclTotal = getExclusionTotal();
+            var exclDetails = getExclusionDetails();
+            var monthlyHours = days * hours / 12;
+            var netWage = wage - exclTotal;
+            hourlyEquiv = calcMonthly(wage, exclTotal, days, hours);
+
+            details.push({ label: '月給（総支給額）', value: formatYen(wage) });
+            exclDetails.forEach(function(e) {
+                details.push({ label: '　除外: ' + e.name, value: '−' + formatYen(e.amount) });
+            });
+            if (exclTotal > 0) {
+                details.push({ label: '除外賃金合計', value: '−' + formatYen(exclTotal) });
+                details.push({ label: '対象賃金額', value: formatYen(netWage) });
+            }
+            details.push({ label: '年間所定労働日数', value: days + ' 日' });
+            details.push({ label: '1日の所定労働時間', value: hours + ' 時間' });
+            details.push({ label: '月平均所定労働時間', value: monthlyHours.toFixed(2) + ' 時間' });
+            details.push({ label: '計算式', value: formatYen(netWage) + ' ÷ ' + monthlyHours.toFixed(2) + '時間' });
+
+        } else if (type === 'piecerate') {
+            var wage = parseNum('piecerateWage');
+            var hours = parseFloat2('piecerateTotalHours');
+            if (!wage) { alert('賃金総額を入力してください。'); return; }
+            if (hours <= 0) { alert('総労働時間を入力してください。'); return; }
+            hourlyEquiv = calcPiecerate(wage, hours);
+            details.push({ label: '賃金計算期間の賃金総額', value: formatYen(wage) });
+            details.push({ label: '総労働時間', value: hours + ' 時間' });
+            details.push({ label: '計算式', value: formatYen(wage) + ' ÷ ' + hours + '時間' });
+
+        } else if (type === 'combination') {
+            var annualDays = parseFloat2('comboAnnualDays');
+            var hoursPerDay = parseFloat2('comboHoursPerDay');
+            if (annualDays <= 0 || hoursPerDay <= 0) {
+                alert('年間所定労働日数と1日の所定労働時間を入力してください。');
+                return;
+            }
+            var monthlyHours = annualDays * hoursPerDay / 12;
+            var hasAny = false;
+
+            details.push({ label: '年間所定労働日数', value: annualDays + ' 日' });
+            details.push({ label: '1日の所定労働時間', value: hoursPerDay + ' 時間' });
+            details.push({ label: '月平均所定労働時間', value: monthlyHours.toFixed(2) + ' 時間' });
+
+            // 月給部分
+            if (document.getElementById('comboMonthly').checked) {
+                var mWage = parseNum('comboMonthlyWage');
+                if (!mWage) { alert('月給部分の金額を入力してください。'); return; }
+                var exclTotal = getExclusionTotal();
+                var netWage = mWage - exclTotal;
+                var mRate = calcMonthly(mWage, exclTotal, annualDays, hoursPerDay);
+                components.push({ label: '月給部分', hourly: mRate });
+                hourlyEquiv += mRate;
+                hasAny = true;
+
+                details.push({ label: '【月給部分】金額', value: formatYen(mWage) });
+                if (exclTotal > 0) {
+                    var exclDets = getExclusionDetails();
+                    exclDets.forEach(function(e) {
+                        details.push({ label: '　除外: ' + e.name, value: '−' + formatYen(e.amount) });
+                    });
+                    details.push({ label: '　対象額', value: formatYen(netWage) });
+                }
+                details.push({ label: '　時間換算額', value: formatYen2(mRate) + '/時間' });
+            }
+
+            // 時間給部分
+            if (document.getElementById('comboHourly').checked) {
+                var hWage = parseNum('comboHourlyWage');
+                if (!hWage) { alert('時間給部分の金額を入力してください。'); return; }
+                var hRate = calcHourly(hWage);
+                components.push({ label: '時間給部分', hourly: hRate });
+                hourlyEquiv += hRate;
+                hasAny = true;
+                details.push({ label: '【時間給部分】', value: formatYen2(hRate) + '/時間' });
+            }
+
+            // 日給部分
+            if (document.getElementById('comboDaily').checked) {
+                var dWage = parseNum('comboDailyWage');
+                if (!dWage) { alert('日給部分の金額を入力してください。'); return; }
+                var dRate = calcDaily(dWage, hoursPerDay);
+                components.push({ label: '日給部分', hourly: dRate });
+                hourlyEquiv += dRate;
+                hasAny = true;
+                details.push({ label: '【日給部分】日給', value: formatYen(dWage) });
+                details.push({ label: '　時間換算額', value: formatYen2(dRate) + '/時間' });
+            }
+
+            // 出来高払部分
+            if (document.getElementById('comboPiecerate').checked) {
+                var pWage = parseNum('comboPiecerateWage');
+                var pHours = parseFloat2('comboPiecerateTotalHours');
+                if (!pWage) { alert('出来高払部分の賃金総額を入力してください。'); return; }
+                if (pHours <= 0) { alert('出来高払部分の総労働時間を入力してください。'); return; }
+                var pRate = calcPiecerate(pWage, pHours);
+                components.push({ label: '出来高払部分', hourly: pRate });
+                hourlyEquiv += pRate;
+                hasAny = true;
+                details.push({ label: '【出来高払部分】賃金総額', value: formatYen(pWage) });
+                details.push({ label: '　総労働時間', value: pHours + ' 時間' });
+                details.push({ label: '　時間換算額', value: formatYen2(pRate) + '/時間' });
+            }
+
+            if (!hasAny) {
+                alert('少なくとも1つの賃金形態を選択してください。');
+                return;
+            }
+        }
+
+        // 判定
+        var pass = hourlyEquiv >= minWage;
+        var diff = hourlyEquiv - minWage;
+
+        // 結果保存
+        lastResult = {
+            prefecture: pref,
+            minWage: minWage,
+            wageType: type,
+            wageTypeLabel: getWageTypeLabel(type),
+            hourlyEquiv: hourlyEquiv,
+            pass: pass,
+            diff: diff,
+            details: details,
+            components: components
+        };
+
+        renderResults();
+    }
+
+    function getWageTypeLabel(type) {
+        return {
+            hourly: '時間給制',
+            daily: '日給制',
+            monthly: '月給制',
+            piecerate: '出来高払制',
+            combination: '組み合わせ'
+        }[type] || type;
+    }
+
+    // ============================================================
+    // 結果表示
+    // ============================================================
+    function renderResults() {
+        var r = lastResult;
+        if (!r) return;
+
+        document.getElementById('results').style.display = 'block';
+
+        // バッジ
+        var badgeEl = document.getElementById('judgmentBadge');
+        if (r.pass) {
+            badgeEl.innerHTML = '<span class="badge badge-pass">適合</span>';
+        } else {
+            badgeEl.innerHTML = '<span class="badge badge-fail">不足</span>';
+        }
+
+        // サマリーカード
+        var cardsEl = document.getElementById('summaryCards');
+        var statusClass = r.pass ? 'pass' : 'fail';
+        cardsEl.innerHTML =
+            '<div class="summary-card">' +
+                '<div class="label">時間換算額</div>' +
+                '<div class="value">' + formatYen2(r.hourlyEquiv) + '</div>' +
+            '</div>' +
+            '<div class="summary-card">' +
+                '<div class="label">' + r.prefecture + ' 最低賃金</div>' +
+                '<div class="value">' + r.minWage.toLocaleString() + '円</div>' +
+            '</div>' +
+            '<div class="summary-card ' + statusClass + '">' +
+                '<div class="label">' + (r.pass ? '余裕額' : '不足額') + '</div>' +
+                '<div class="value">' + (r.pass ? '+' : '') + formatYen2(r.diff) + '</div>' +
+            '</div>';
+
+        // 明細テーブル
+        var table = document.getElementById('detailTable');
+        var tbody = document.getElementById('detailBody');
+        tbody.innerHTML = '';
+
+        // 基本情報行
+        addDetailRow(tbody, '都道府県', r.prefecture);
+        addDetailRow(tbody, '賃金形態', r.wageTypeLabel);
+
+        // 計算明細
+        if (r.details.length > 0) {
+            addDetailSectionRow(tbody, '計算明細');
+            r.details.forEach(function(d) {
+                addDetailRow(tbody, d.label, d.value);
+            });
+        }
+
+        // 組み合わせの場合、各成分のサマリー
+        if (r.components.length > 0) {
+            addDetailSectionRow(tbody, '時間換算額の内訳');
+            r.components.forEach(function(c) {
+                addDetailRow(tbody, c.label, formatYen2(c.hourly) + '/時間');
+            });
+        }
+
+        // 判定結果行
+        var totalClass = r.pass ? 'total pass' : 'total fail';
+        var tr = document.createElement('tr');
+        tr.className = totalClass;
+        tr.innerHTML = '<td>時間換算額</td><td>' + formatYen2(r.hourlyEquiv) + '/時間</td>';
+        tbody.appendChild(tr);
+
+        tr = document.createElement('tr');
+        tr.className = totalClass;
+        tr.innerHTML = '<td>最低賃金（' + r.prefecture + '）</td><td>' + r.minWage.toLocaleString() + '円/時間</td>';
+        tbody.appendChild(tr);
+
+        tr = document.createElement('tr');
+        tr.className = totalClass;
+        tr.innerHTML = '<td>判定</td><td>' + (r.pass ? '適合（+' + formatYen2(r.diff) + '）' : '不足（' + formatYen2(r.diff) + '）') + '</td>';
+        tbody.appendChild(tr);
+
+        table.style.display = '';
+
+        // スクロール
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function addDetailRow(tbody, label, value) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + label + '</td><td>' + value + '</td>';
+        tbody.appendChild(tr);
+    }
+
+    function addDetailSectionRow(tbody, label) {
+        var tr = document.createElement('tr');
+        tr.className = 'section-header';
+        tr.innerHTML = '<td colspan="2">' + label + '</td>';
+        tbody.appendChild(tr);
+    }
+
+    // ============================================================
+    // ヘルパー関数
+    // ============================================================
+    function formatYen(amount) {
+        return Math.floor(amount).toLocaleString() + '円';
+    }
+
+    function formatYen2(amount) {
+        // 小数点以下2桁まで表示
+        var rounded = Math.floor(amount * 100) / 100;
+        var parts = rounded.toFixed(2).split('.');
+        parts[0] = Number(parts[0]).toLocaleString();
+        return parts[0] + '.' + parts[1] + '円';
+    }
+
+    // ============================================================
+    // CSV出力
+    // ============================================================
+    function exportCSV() {
+        if (!lastResult) {
+            alert('先に判定を実行してください。');
+            return;
+        }
+        var r = lastResult;
+        var rows = [
+            ['項目', '値'],
+            ['都道府県', r.prefecture],
+            ['最低賃金', r.minWage + '円'],
+            ['賃金形態', r.wageTypeLabel]
+        ];
+
+        r.details.forEach(function(d) {
+            rows.push([d.label, d.value]);
+        });
+
+        if (r.components.length > 0) {
+            rows.push(['--- 時間換算額の内訳 ---', '']);
+            r.components.forEach(function(c) {
+                rows.push([c.label, formatYen2(c.hourly) + '/時間']);
+            });
+        }
+
+        rows.push(['']);
+        rows.push(['時間換算額', formatYen2(r.hourlyEquiv)]);
+        rows.push(['最低賃金', r.minWage + '円']);
+        rows.push(['判定', r.pass ? '適合' : '不足']);
+        rows.push(['差額', (r.pass ? '+' : '') + formatYen2(r.diff)]);
+
+        var bom = '\uFEFF';
+        var csv = bom + rows.map(function(row) { return row.join(','); }).join('\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = '最低賃金判定_' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    // 印刷
+    // ============================================================
+    function printResult() {
+        if (!lastResult) {
+            alert('先に判定を実行してください。');
+            return;
+        }
+        window.print();
+    }
+    </script>
+</body>
+</html>
